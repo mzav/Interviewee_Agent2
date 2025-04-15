@@ -1,0 +1,49 @@
+name: Deploy 2 DigitalOcean
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # Ставим Python and pip
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Кешируем пакеты pip для ускорения установки зависимостей
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Деплой на DigitalOcean через SSH
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          password: ${{ secrets.DROPLET_PASSWORD }}
+          script: |
+            echo "Starting deployment process..."
+            mkdir -p /tmp/deploy
+            cd /tmp/deploy
+            echo "Downloading deployment script..."
+            APP_DIR="/opt/interviewee_agent"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+            curl -s -o _deploy.sh https://raw.githubusercontent.com/${{ github.repository }}/main/_deploy.sh
+            chmod +x _deploy.sh
+            ./_deploy.sh "$APP_DIR" "$REPO_URL" "$OPENAI_API_KEY"
