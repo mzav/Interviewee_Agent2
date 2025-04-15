@@ -75,6 +75,9 @@ Environment=PRODUCTION=true
 Environment=OPENAI_API_KEY=$OPENAI_API_KEY
 Restart=always
 ExecStartPre=/bin/mkdir -p /tmp/ai-interview-temp
+ExecStartPre=/bin/rm -rf /tmp/ai-interview-temp/*
+ExecStartPre=/bin/chown -R www-data:www-data /tmp/ai-interview-temp
+ExecStartPre=/bin/chmod 755 /tmp/ai-interview-temp
 
 [Install]
 WantedBy=multi-user.target
